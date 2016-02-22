@@ -1,5 +1,7 @@
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -8,11 +10,14 @@ import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import net.java.dev.designgridlayout.DesignGridLayout;
+import utils.Seat;
+import utils.SeatRow;
 
 /**
  * GUI
@@ -21,24 +26,27 @@ import net.java.dev.designgridlayout.DesignGridLayout;
  */
 public class GUI extends JFrame {
 	// properties of the GUI
-	private final JFrame frame;
+	private JFrame frame;
 	//private static final int FRAME_WIDTH = 450;
 	//private static final int FRAME_HEIGHT = 500;
 	private static final int FRAME_X = 150;
 	private static final int FRAME_Y = 250;
 
-	//private final ArrayList<SeatRow> rows;
+	private ArrayList<SeatRow> rows;
 
-	private final JScrollPane pneScroll;
-	private final JTextArea txtOutput;
+	private JScrollPane pneScroll;
+	private JTextArea txtOutput;
 
 	DesignGridLayout rowLayout;
+	Engine engine = new Engine();
 
-	private final JButton btnCancel;
-	private final JButton btnOk;
-	private final JButton btnReset;
+	private JButton btnCancel;
+	private JButton btnOk;
+	private JButton btnReset;
+	private JButton btnChange;
+	private JPanel pnlRows;
 
-	private final DesignGridLayout layout;
+	private DesignGridLayout layout;
 
 	public GUI() {
 		// initializes the form
@@ -50,24 +58,53 @@ public class GUI extends JFrame {
 		frame.setLocation(FRAME_X, FRAME_Y);
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-		//rows = new ArrayList<>();
+		layout = new DesignGridLayout(frame);
+
+		rows = new ArrayList<>();
 
 		btnOk = new JButton("Calculate!");
-		btnCancel = new JButton("Cancel");
-		btnReset = new JButton("Reset");
+		btnOk.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
 
-		layout = new DesignGridLayout(frame);
+				ArrayList<Seat> _seats = getSeats();
+				engine.addSeats(_seats);
+				txtOutput.setText("");
+				setReportOutput(engine.getReport());
+				engine.clearSeats();
+
+			}});
+		btnCancel = new JButton("Cancel");
+		btnCancel.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+
+				disposeFrame();
+
+			}});
+		btnReset = new JButton("Reset");
+		btnReset.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+
+				resetFrame();	
+
+			}});
+		btnChange = new JButton("Change");
+		btnChange.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				changeRows();
+
+			}});
 
 		JLabel lblCount = new JLabel(
 				"                                    Seat Count");
 		JLabel lblPrice = new JLabel("                          Price ($)");
 
-		JPanel pnlRows = new JPanel();
+		pnlRows = new JPanel();
 		pnlRows.setBorder(BorderFactory.createTitledBorder("Enter data"));
 		rowLayout = new DesignGridLayout(pnlRows);
 
 		txtOutput = new JTextArea();
-		txtOutput.setColumns(20);
+		txtOutput.setColumns(50);
 		txtOutput.setRows(8);
 		txtOutput.setBorder(BorderFactory.createTitledBorder("Report"));
 		txtOutput.setFont(new Font("Courier", Font.PLAIN, 14));
@@ -88,12 +125,15 @@ public class GUI extends JFrame {
 		pneButton.add(btnOk);
 
 		layout.row().grid().add(lblCount).add(lblPrice);
+		setRowCount(Main.seatCount);
 		layout.row().grid().add(pnlRows);
 		layout.row().grid().add(pneScroll);
 		// layout.row().grid().add(pneButton);
-		layout.row().right().add(btnReset).add(btnCancel).add(btnOk);
+		layout.row().right().add(btnChange).add(btnReset).add(btnCancel).add(btnOk);
 	}
-	
+
+	// ------------------------------------------------------------------------------------
+
 	public void initializeFrame() {
 		initializeFrame(true);
 	}
@@ -101,22 +141,36 @@ public class GUI extends JFrame {
 	public void initializeFrame(boolean _visible) {
 		frame.pack();
 		frame.setTitle("Concert Ticket Calculator");
+		//frame.setSize(500, 600);
 		frame.setResizable(false);
+		
 		frame.setVisible(_visible);
+		
+
 	}
 	
-	
+	public void changeRows() {
+		String input = (String) JOptionPane.showInputDialog(null, "Enter number of rows." + "\n" + "Caution: Changing the number of rows will result in loss of data.", "Enter Number", JOptionPane.QUESTION_MESSAGE, null, null, Main.seatCount);
+		
+		Main.seatCount = Integer.parseInt(input);
+		disposeFrame();
+		Main.main(null);
+		
+	}
+
+
 
 	// method for building the specified # of rows
-	@Override
+
 	public void setRowCount(int _rows) {
 
 		int x = 1;
 
+		Main.seatCount = _rows;
 		while (x <= _rows) {
 			SeatRow _row = new SeatRow(getSeatName(x));
 			rowLayout.row().grid(_row.getLabel()).add(_row.getCount())
-					.add(_row.getPrice());
+			.add(_row.getPrice());
 			rows.add(_row);
 			x++;
 		}
@@ -126,16 +180,16 @@ public class GUI extends JFrame {
 		return "Row " + _number + ":";
 	}
 
-	@Override
+
 	public void setReportOutput(String _output) {
 		txtOutput.setText(_output);
 
 	}
-	/*
+
 
 	// iterates through the seat rows to fetch the input and stores it in a
 	// array list
-	@Override
+
 	public ArrayList<Seat> getSeats() {
 		ArrayList<Seat> _seats = new ArrayList<>();
 		Iterator<SeatRow> itr = rows.iterator();
@@ -145,14 +199,14 @@ public class GUI extends JFrame {
 			String _name = _row.getName();
 			String _price = _row.getPrice().getText();
 			String _count = _row.getCount().getText();
-			boolean _false = false;
 
 			Integer _countValue;
 			// if count is a non-negative number otherwise return -1
 			if (_count.matches("[0-9]+")) {
 				_countValue = Integer.valueOf(_count);
 			} else {
-				_countValue = -1;
+				_countValue = 0;
+				
 			}
 			// if price is a any series of non-negative numbers followed with a decimal,
 			// then, followed by any series of non-negative numbers
@@ -160,7 +214,7 @@ public class GUI extends JFrame {
 			if (_price.matches("[0-9]+(\\.[0-9]+)?")) {
 				_priceValue = Double.valueOf(_price);
 			} else {
-				_priceValue = Double.NaN;
+				_priceValue = 0.0;
 			}
 			Seat _seat = new Seat(_name, _priceValue, _countValue);
 
@@ -170,45 +224,18 @@ public class GUI extends JFrame {
 		return _seats;
 	}
 
-	*/
-	@Override
-	public void onCalculate(IEvent _event) {
-		btnOk.addActionListener(new ButtonActionListener(_event));
-
-	}
-
-	@Override
-	public void displayFrame() {
-		frame.pack();
-		// frame.setResizable(false);
-		frame.setVisible(true);
-
-	}
-
-	@Override
-	public void onCancel(IEvent _event) {
-		btnCancel.addActionListener(new ButtonActionListener(_event));
-
-	}
-
-	@Override
-	public void onReset(IEvent _event) {
-		btnReset.addActionListener(new ButtonActionListener(_event));
-
-	}
-
-	@Override
 	public void disposeFrame() {
 		frame.dispose();
 	}
 
-	@Override
+
 	public void resetFrame() {
 		Iterator<SeatRow> itr = rows.iterator();
 		while (itr.hasNext()) {
 			itr.next().reset();
 		}
+		engine.clearSeats();
 		txtOutput.setText("");
 	}
-	
+
 }

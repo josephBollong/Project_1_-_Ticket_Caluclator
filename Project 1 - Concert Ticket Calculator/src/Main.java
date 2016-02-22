@@ -11,9 +11,12 @@ import javax.swing.plaf.nimbus.NimbusLookAndFeel;
  * @author Joe Bollong
  */
 public class Main {
+	
+	public static Integer seatCount = 3;
 
 	// Forces the complier to use the nimbus theme, and if it can't, then it forces it to quits
 	public static void main(String[] args) {
+		
 		try {
 			UIManager.setLookAndFeel(new NimbusLookAndFeel());
 		} catch (UnsupportedLookAndFeelException ex) {
