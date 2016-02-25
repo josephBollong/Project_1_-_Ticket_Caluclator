@@ -31,6 +31,7 @@ public class GUI extends JFrame {
 	//private static final int FRAME_HEIGHT = 500;
 	private static final int FRAME_X = 150;
 	private static final int FRAME_Y = 250;
+	private static final int DEFAULT_ROWS = 3;
 
 	private ArrayList<SeatRow> rows;
 
@@ -90,8 +91,8 @@ public class GUI extends JFrame {
 		btnChange = new JButton("Change");
 		btnChange.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
-				changeRows();
+
+				changeRows((String) JOptionPane.showInputDialog(null, "Enter number of rows." + "\n" + "Caution: Changing the number of rows will result in loss of data.", "Enter Number", JOptionPane.QUESTION_MESSAGE, null, null, Main.seatCount));
 
 			}});
 
@@ -143,22 +144,32 @@ public class GUI extends JFrame {
 		frame.setTitle("Concert Ticket Calculator");
 		//frame.setSize(500, 600);
 		frame.setResizable(false);
-		
 		frame.setVisible(_visible);
-		
 
 	}
 	
-	public void changeRows() {
-		String input = (String) JOptionPane.showInputDialog(null, "Enter number of rows." + "\n" + "Caution: Changing the number of rows will result in loss of data.", "Enter Number", JOptionPane.QUESTION_MESSAGE, null, null, Main.seatCount);
+	// create a dialog that allows the user to specify the number of rows that is to be calculated
+
+	public void changeRows(String input) {
 		
-		Main.seatCount = Integer.parseInt(input);
-		disposeFrame();
-		Main.main(null);
-		
+
+		if (input != null) {
+			try {
+				Main.seatCount = Integer.parseInt(input);
+				disposeFrame();
+				Main.main(null);
+			} catch (NumberFormatException ex) {
+				JOptionPane.showMessageDialog(this, "\"" + input + "\"" + " is not a valid number. Please enter a valid number.");
+				changeRows((String) JOptionPane.showInputDialog(null, "Enter number of rows." + "\n" + "Caution: Changing the number of rows will result in loss of data.", "Enter Number", JOptionPane.QUESTION_MESSAGE, null, null, Main.seatCount));
+			}
+
+		} else {
+			return;
+		}
 	}
-
-
+	public void changeRows() {
+		changeRows(String.valueOf(DEFAULT_ROWS));
+	}
 
 	// method for building the specified # of rows
 
@@ -206,7 +217,7 @@ public class GUI extends JFrame {
 				_countValue = Integer.valueOf(_count);
 			} else {
 				_countValue = 0;
-				
+
 			}
 			// if price is a any series of non-negative numbers followed with a decimal,
 			// then, followed by any series of non-negative numbers
@@ -230,12 +241,30 @@ public class GUI extends JFrame {
 
 
 	public void resetFrame() {
-		Iterator<SeatRow> itr = rows.iterator();
-		while (itr.hasNext()) {
-			itr.next().reset();
+		
+		String[] options = new String[] {"Clear", "Reset", "Cancel"};
+		int n = JOptionPane.showOptionDialog(this, "Would you like to clear input, or reset to defaults?", "Reset", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+		
+		if (n == JOptionPane.YES_OPTION) {
+			Iterator<SeatRow> itr = rows.iterator();
+			while (itr.hasNext()) {
+				itr.next().reset();
+			}
+			engine.clearSeats();
+			txtOutput.setText("");
+		} else if (n == JOptionPane.NO_OPTION) {
+			Iterator<SeatRow> itr = rows.iterator();
+			while (itr.hasNext()) {
+				itr.next().reset();
+			}
+			engine.clearSeats();
+			txtOutput.setText("");
+			
+			changeRows();	
+		} else if (n == JOptionPane.CANCEL_OPTION) {
+			return;
 		}
-		engine.clearSeats();
-		txtOutput.setText("");
+		
 	}
 
 }
